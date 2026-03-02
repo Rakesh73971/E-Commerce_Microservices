@@ -1,0 +1,42 @@
+version: '3.9'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: order_services_db
+    restart: always
+    environment:
+       POSTGRES_DB: order_services_db
+       POSTGRES_USER: order_services_user
+       POSTGRES_PASSWORD: order_services_pass
+    ports:
+      - "5454:5454"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    healthcheck:
+      test: ["CMD-SHELL","pg_ready -U order_services_user -d order_services_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+  web:
+    build: .
+    container_name: order_services_app
+    command: >
+       sh -c "python manage.py migrate && gunicorn config.wsgi:application --bind 
+              0.0.0.0:8002"
+    volumes:
+      - .:/app
+    ports:
+      - "8002:8002"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      - DB_NAME=order_services_db
+      - DB_USER=order_services_user
+      - DB_PASSWORD=order_services_pass
+      - DB_HOST=db
+      - DB_PORT=5454
+volumes:
+  postgres_data:
+      
