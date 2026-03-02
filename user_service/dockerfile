@@ -1,0 +1,31 @@
+FROM python:3.11-slim
+
+# Prevent Python from writing .pyc files and keep logs flushing to terminal
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
+
+# Working directory
+WORKDIR /app
+
+# --- ADD THIS SECTION ---
+# Install system dependencies required for packages like psycopg2 or pillow
+RUN apt-get update && apt-get install -y \
+    libpq-dev \
+    gcc \
+    python3-dev \
+    && rm -rf /var/lib/apt/lists/*
+# ------------------------
+
+# Copy and install the requirements
+COPY requirements.txt .
+RUN pip install --upgrade pip
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy the project
+COPY . .
+
+# Port
+EXPOSE 8000
+
+# Command to run
+CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000"]
