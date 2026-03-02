@@ -3,25 +3,25 @@ version: '3.9'
 services:
   db:
     image: postgres:15-alpine  # Fixed: Added image
-    container_name: user_services_db
+    container_name: ${PROJECT_NAME}_db
     restart: always
     environment: 
-       POSTGRES_DB: user_services_db
-       POSTGRES_USER: user_services_user
-       POSTGRES_PASSWORD: user_services_pass
+       POSTGRES_DB: ${DB_NAME}
+       POSTGRES_USER: ${DB_USER}
+       POSTGRES_PASSWORD: ${DB_PASSWORD}
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes: 
       - postgres_data:/var/lib/postgresql/data/ # Fixed: changed 'val' to 'var'
     healthcheck: # Added: ensures DB is ready before app starts
-      test: ["CMD-SHELL", "pg_isready -U user_services_user -d user_services_db"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
       interval: 5s
       timeout: 5s
       retries: 5
 
   web:
     build: .
-    container_name: user_services_app
+    container_name: ${PROJECT_NAME}_app
     # Note: Running migrations in 'command' is okay for dev, 
     # but usually handled via an entrypoint script in prod.
     command: >
@@ -35,11 +35,11 @@ services:
       db:
         condition: service_healthy # Fixed: waits for healthcheck to pass
     environment:
-      - DB_NAME=user_services_db
-      - DB_USER=user_services_user
-      - DB_PASSWORD=user_services_pass
-      - DB_HOST=db
-      - DB_PORT=5432
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
 
 volumes:
   postgres_data:
